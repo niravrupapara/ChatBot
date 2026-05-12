@@ -3,3 +3,4 @@ langchain-mistralai
 langchain-google-genai
 python-dotenv
 pyyaml
+streamlit
