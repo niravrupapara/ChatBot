@@ -1,12 +1,17 @@
 import streamlit as st
 from dotenv import load_dotenv
 from src.graph.builder import build_graph
-from src.session.manager import generate_session_id
+from src.session.manager import generate_session_id, update_session_title
 from src.utils.logger import get_logger
+from ui.components.sidebar import render_sidebar
+
 load_dotenv()
 logger = get_logger(__name__)
 
-st.set_page_config(page_title="Chatbot", page_icon="🤖", layout="centered")
+st.set_page_config(page_title="Chatbot", page_icon="🤖", layout="wide")
+
+render_sidebar()
+
 st.title("Chatbot")
 
 if "graph" not in st.session_state:
@@ -29,6 +34,10 @@ for msg in messages:
 
 user_input = st.chat_input("Type your message...")
 if user_input:
+    # Update session title from first user message
+    if len(messages) == 0:
+        update_session_title(st.session_state.session_id, user_input)
+
     with st.chat_message("user"):
         st.write(user_input)
 
