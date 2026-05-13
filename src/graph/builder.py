@@ -11,4 +11,6 @@ def build_graph():
     builder.add_edge(START, "chat")
     builder.add_edge("chat", END)
 
-    return builder.compile()
+
+    graph = builder.compile()
+    return graph
