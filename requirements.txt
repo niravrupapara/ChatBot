@@ -1,8 +1,9 @@
 langgraph
 langgraph-checkpoint-sqlite
-langchain-mistralai
-langchain-google-genai
+langchain-core
+mistralai==1.5.1
 python-dotenv
 pyyaml
 streamlit
+streamlit-chat
 -e .
