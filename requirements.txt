@@ -1,8 +1,13 @@
 langgraph
 langgraph-checkpoint-sqlite
 langchain-core
+langchain-community
 mistralai==1.5.1
 python-dotenv
 pyyaml
 streamlit
+numexpr
+duckduckgo-search
+ddgs
+yfinance
 -e .
