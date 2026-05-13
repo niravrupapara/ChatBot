@@ -1,10 +1,10 @@
 import streamlit as st
 from dotenv import load_dotenv
 from src.graph.builder import build_graph
+from src.session.manager import generate_session_id
 from src.utils.logger import get_logger
 
 load_dotenv()
-
 logger = get_logger(__name__)
 
 st.set_page_config(page_title="Chatbot", page_icon="🤖")
@@ -12,26 +12,27 @@ st.title("Chatbot")
 
 if "graph" not in st.session_state:
     st.session_state.graph = build_graph()
-    logger.info("Graph initialized")
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if "session_id" not in st.session_state:
+    st.session_state.session_id = generate_session_id()
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+graph = st.session_state.graph
+thread_config = {"configurable": {"thread_id": st.session_state.session_id}}
 
-if prompt := st.chat_input("Type your message..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.write(prompt)
+# Load and display all messages from persisted graph state
+state = graph.get_state(thread_config)
+messages = state.values.get("messages", []) if state.values else []
 
+for msg in messages:
+    role = "user" if msg.type == "human" else "assistant"
+    with st.chat_message(role):
+        st.write(msg.content)
+
+input = st.chat_input("Type your message...")
+if input:
     with st.spinner("Thinking..."):
-        result = st.session_state.graph.invoke(
-            {"messages": [{"role": "user", "content": prompt}]}
+        graph.invoke(
+            {"messages": [{"role": "user", "content": input}]},
+            config=thread_config
         )
-        response = result["messages"][-1].content
-
-    st.session_state.messages.append({"role": "assistant", "content": response})
-    with st.chat_message("assistant"):
-        st.write(response)
+    st.rerun()
