@@ -7,6 +7,8 @@ from mistralai import Mistral
 from langchain_core.messages import AIMessage
 from src.graph.state import ChatState
 from src.agents.tools import ALL_TOOLS
+from src.agents.tools.rag_search import get_session_id
+from src.rag.retriever import session_has_documents
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
 
@@ -39,10 +41,22 @@ def _get_mistral_tools() -> list:
     return tools
 
 
+def _build_system_message() -> dict | None:
+    session_id = get_session_id()
+    if session_id and session_has_documents(session_id):
+        return {"role": "system", "content": "The user has uploaded documents. When answering questions about their content, always use the rag_search tool to find relevant information before responding."}
+    return None
+
+
 def agent_node(state: ChatState) -> dict:
     logger.info("Agent node activated")
     messages = _to_mistral_format(state["messages"])
     mistral_tools = _get_mistral_tools()
+
+    system_msg = _build_system_message()
+    if system_msg:
+        messages = [system_msg] + messages
+        logger.info("RAG system prompt injected")
 
     while True:
         response = client.chat.complete(

@@ -9,3 +9,10 @@ session:
 logging:
   level: "INFO"
   format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+
+rag:
+  chunk_size: 500
+  chunk_overlap: 50
+  vector_store_path: "data/vector_store"
+  embedding_model: "all-MiniLM-L6-v2"
+  top_k: 3

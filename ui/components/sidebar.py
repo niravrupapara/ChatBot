@@ -5,6 +5,7 @@ from src.session.manager import (
     delete_session,
     setup_sessions_table,
 )
+from ui.components.file_upload import render_file_upload
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -50,3 +51,5 @@ def render_sidebar() -> None:
                     if is_active:
                         st.session_state.session_id = generate_session_id()
                     st.rerun()
+
+    render_file_upload(st.session_state.session_id)

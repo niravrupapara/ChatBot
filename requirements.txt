@@ -10,4 +10,7 @@ numexpr
 duckduckgo-search
 ddgs
 yfinance
+faiss-cpu
+sentence-transformers
+pypdf
 -e .

@@ -10,15 +10,15 @@ logger = get_logger(__name__)
 
 st.set_page_config(page_title="Chatbot", page_icon="🤖", layout="wide")
 
-render_sidebar()
-
-st.title("Chatbot")
-
 if "graph" not in st.session_state:
     st.session_state.graph = build_graph()
 
 if "session_id" not in st.session_state:
     st.session_state.session_id = generate_session_id()
+
+render_sidebar()
+
+st.title("Chatbot")
 
 graph = st.session_state.graph
 thread_config = {"configurable": {"thread_id": st.session_state.session_id}}
