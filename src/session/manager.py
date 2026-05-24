@@ -1,12 +1,18 @@
+import os
 import uuid
 import sqlite3
 from datetime import datetime
+from mistralai import Mistral
+from dotenv import load_dotenv
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
+
+load_dotenv()
 
 logger = get_logger(__name__)
 config = load_config()
 DB_PATH = config["session"]["db_path"]
+_mistral = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
 
 
 def _get_conn() -> sqlite3.Connection:
@@ -46,6 +52,50 @@ def update_session_title(session_id: str, title: str) -> None:
             (short_title, session_id),
         )
     logger.info(f"Session title updated: {session_id} → '{short_title}'")
+
+
+def generate_title(user_message: str) -> str:
+    logger.info("Generating session title via LLM")
+    prompt = (
+        f"""
+You are a chat title generator.
+
+Generate a concise and descriptive title for the conversation.
+
+Rules:
+- Maximum 4 words
+- No quotes
+- No punctuation
+- No emojis
+- Do not respond like an assistant
+- Avoid generic titles like "Hello", "Hi there", "Chat"
+- Focus on the user's intent/topic
+
+Examples:
+hello -> Friendly Chat
+hey bro -> Casual Conversation
+how to learn python -> Learning Python
+build rag chatbot -> RAG Chatbot
+fix streamlit rerun issue -> Streamlit Rerun Fix
+
+User message:
+{user_message}
+
+Title:
+"""
+    )
+    try:
+        response = _mistral.chat.complete(
+            model="mistral-small-latest",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        title = response.choices[0].message.content.strip()
+        logger.info(f"LLM title generated: '{title}'")
+        return title
+    except Exception as e:
+        logger.warning(f"Title generation failed, using fallback: {e}")
+        return user_message[:40] + "..." if len(user_message) > 40 else user_message
 
 
 def list_sessions() -> list[dict]:

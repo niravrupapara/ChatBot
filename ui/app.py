@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_chat import message
 from dotenv import load_dotenv
 from src.graph.builder import build_graph
-from src.session.manager import generate_session_id, update_session_title
+from src.session.manager import generate_session_id, update_session_title, generate_title
 from src.utils.logger import get_logger
 from ui.components.sidebar import render_sidebar
 
@@ -19,6 +19,16 @@ if "session_id" not in st.session_state:
 
 render_sidebar()
 
+# Deferred title generation — runs after first response is shown
+if st.session_state.get("needs_title"):
+    session_id = st.session_state.session_id
+    first_msg = st.session_state.pop("first_message", "")
+    logger.info(f"Generating title for session: {session_id}")
+    title = generate_title(first_msg)
+    update_session_title(session_id, title)
+    st.session_state.needs_title = False
+    st.rerun()
+
 st.title("Chatbot")
 
 graph = st.session_state.graph
@@ -34,9 +44,11 @@ for i, msg in enumerate(messages):
 
 user_input = st.chat_input("Type your message...")
 if user_input:
-    # Update session title from first user message
+    # Flag title generation for after first response is shown
     if len(messages) == 0:
-        update_session_title(st.session_state.session_id, user_input)
+        st.session_state.needs_title = True
+        st.session_state.first_message = user_input
+        logger.info("First message detected — title generation deferred")
 
     message(user_input, is_user=True, key="user_input_current")
 
