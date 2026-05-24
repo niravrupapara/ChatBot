@@ -10,6 +10,10 @@ logging:
   level: "INFO"
   format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 
+memory:
+  summary_threshold: 20
+  window_size: 6
+
 rag:
   chunk_size: 500
   chunk_overlap: 50

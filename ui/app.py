@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_chat import message
 from dotenv import load_dotenv
 from src.graph.builder import build_graph
 from src.session.manager import generate_session_id, update_session_title
@@ -27,10 +28,9 @@ thread_config = {"configurable": {"thread_id": st.session_state.session_id}}
 state = graph.get_state(thread_config)
 messages = state.values.get("messages", []) if state.values else []
 
-for msg in messages:
-    role = "user" if msg.type == "human" else "assistant"
-    with st.chat_message(role):
-        st.write(msg.content)
+for i, msg in enumerate(messages):
+    is_user = msg.type == "human"
+    message(msg.content, is_user=is_user, key=f"msg_{i}" )
 
 user_input = st.chat_input("Type your message...")
 if user_input:
@@ -38,8 +38,7 @@ if user_input:
     if len(messages) == 0:
         update_session_title(st.session_state.session_id, user_input)
 
-    with st.chat_message("user"):
-        st.write(user_input)
+    message(user_input, is_user=True, key="user_input_current")
 
     with st.spinner("Thinking..."):
         graph.invoke(

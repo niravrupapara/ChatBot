@@ -9,6 +9,7 @@ from src.graph.state import ChatState
 from src.agents.tools import ALL_TOOLS
 from src.agents.tools.rag_search import get_session_id
 from src.rag.retriever import session_has_documents
+from src.memory.short_term import should_summarize, summarize_messages
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
 
@@ -50,7 +51,25 @@ def _build_system_message() -> dict | None:
 
 def agent_node(state: ChatState) -> dict:
     logger.info("Agent node activated")
-    messages = _to_mistral_format(state["messages"])
+    all_messages = state["messages"]
+    existing_summary = state.get("summary", "")
+    window = config.get("memory", {}).get("window_size", 10)
+    threshold = config.get("memory", {}).get("summary_threshold", 20)
+    new_summary = existing_summary
+
+    # Summarize old messages if threshold exceeded
+    if should_summarize(all_messages, threshold):
+        old_messages = all_messages[:-window]
+        new_summary = summarize_messages(old_messages, existing_summary)
+        logger.info("Conversation summarized")
+
+    # Build LLM context: summary (if any) + recent messages only
+    recent = _to_mistral_format(all_messages[-window:])
+    if new_summary:
+        messages = [{"role": "system", "content": f"Summary of earlier conversation:\n{new_summary}"}] + recent
+    else:
+        messages = recent
+
     mistral_tools = _get_mistral_tools()
 
     system_msg = _build_system_message()
@@ -71,7 +90,7 @@ def agent_node(state: ChatState) -> dict:
         # No tool call — final answer
         if not msg.tool_calls:
             logger.info("Agent final response ready")
-            return {"messages": [AIMessage(content=msg.content)]}
+            return {"messages": [AIMessage(content=msg.content)], "summary": new_summary}
 
         # Add assistant message with tool calls to history
         messages.append({

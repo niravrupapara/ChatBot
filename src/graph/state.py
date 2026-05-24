@@ -5,3 +5,4 @@ from typing import TypedDict
 
 class ChatState(TypedDict):
     messages: Annotated[list, add_messages]
+    summary: str
