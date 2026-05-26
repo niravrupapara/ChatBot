@@ -5,11 +5,13 @@ load_dotenv()
 
 from mistralai import Mistral
 from langchain_core.messages import AIMessage
+from langgraph.store.base import BaseStore
 from src.graph.state import ChatState
 from src.agents.tools import ALL_TOOLS
 from src.agents.tools.rag_search import get_session_id
 from src.rag.retriever import session_has_documents
 from src.memory.short_term import should_summarize, summarize_messages
+from src.memory.long_term import format_memories, NAMESPACE
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
 
@@ -49,7 +51,7 @@ def _build_system_message() -> dict | None:
     return None
 
 
-def agent_node(state: ChatState) -> dict:
+def agent_node(state: ChatState, store: BaseStore) -> dict:
     logger.info("Agent node activated")
     all_messages = state["messages"]
     existing_summary = state.get("summary", "")
@@ -72,10 +74,22 @@ def agent_node(state: ChatState) -> dict:
 
     mistral_tools = _get_mistral_tools()
 
-    system_msg = _build_system_message()
-    if system_msg:
-        messages = [system_msg] + messages
+    # Build system messages: long-term memory + RAG
+    system_messages = []
+
+    memory_items = store.search(NAMESPACE)
+    memory_text = format_memories(memory_items)
+    if memory_text:
+        system_messages.append({"role": "system", "content": memory_text})
+        logger.info("Long-term memory injected")
+
+    rag_msg = _build_system_message()
+    if rag_msg:
+        system_messages.append(rag_msg)
         logger.info("RAG system prompt injected")
+
+    if system_messages:
+        messages = system_messages + messages
 
     while True:
         response = client.chat.complete(
