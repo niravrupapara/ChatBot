@@ -12,6 +12,7 @@ load_dotenv()
 logger = get_logger(__name__)
 config = load_config()
 DB_PATH = config["session"]["db_path"]
+os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
 _mistral = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
 
 
@@ -19,7 +20,7 @@ def _get_conn() -> sqlite3.Connection:
     return sqlite3.connect(DB_PATH, check_same_thread=False)
 
 
-def setup_sessions_table() -> None:
+def _init_db() -> None:
     with _get_conn() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS sessions (
@@ -29,6 +30,13 @@ def setup_sessions_table() -> None:
             )
         """)
     logger.info("Sessions table ready")
+
+
+_init_db()
+
+
+def setup_sessions_table() -> None:
+    _init_db()
 
 
 def generate_session_id(title: str = "New Chat") -> str:
