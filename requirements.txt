@@ -13,4 +13,5 @@ yfinance
 faiss-cpu
 sentence-transformers
 pypdf
+streamlit-chat
 -e .
