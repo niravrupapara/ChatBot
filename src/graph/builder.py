@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -25,6 +26,7 @@ def build_graph():
     builder.add_edge("agent", END)
 
     db_path = config["session"]["db_path"]
+    os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
     conn = sqlite3.connect(db_path, check_same_thread=False)
     checkpointer = SqliteSaver(conn)
     store = SqliteStore(db_path)
