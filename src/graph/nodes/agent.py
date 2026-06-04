@@ -13,7 +13,7 @@ from src.rag.retriever import session_has_documents
 from src.memory.short_term import should_summarize, summarize_messages
 from src.memory.long_term import format_memories, NAMESPACE
 from src.utils.config_loader import load_config
-from src.utils.runtime_config import get_override
+from src.utils.runtime_config import get_override, add_tool_call
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -138,6 +138,7 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
 
             tool_fn = TOOL_MAP.get(tool_name)
             tool_result = tool_fn.invoke(tool_args) if tool_fn else f"Tool '{tool_name}' not found."
+            add_tool_call(tool_name)
             logger.info(f"Tool result received: {tool_name}")
 
             messages.append({

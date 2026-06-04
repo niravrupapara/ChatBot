@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from src.graph.builder import build_graph
 from src.session.manager import generate_session_id, update_session_title, generate_title
 from src.utils.logger import get_logger
+from src.utils.runtime_config import reset_tool_calls, get_tool_calls
 from ui.components.sidebar import render_sidebar
 
 load_dotenv()
@@ -40,7 +41,10 @@ messages = state.values.get("messages", []) if state.values else []
 
 for i, msg in enumerate(messages):
     is_user = msg.type == "human"
-    message(msg.content, is_user=is_user, key=f"msg_{i}" )
+    message(msg.content, is_user=is_user, key=f"msg_{i}")
+
+if st.session_state.get("last_tools_used"):
+    st.caption(f"🔧 Tools used: {', '.join(st.session_state['last_tools_used'])}")
 
 user_input = st.chat_input("Type your message...")
 if user_input:
@@ -53,8 +57,17 @@ if user_input:
     message(user_input, is_user=True, key="user_input_current")
 
     with st.spinner("Thinking..."):
+        reset_tool_calls()
         graph.invoke(
             {"messages": [{"role": "user", "content": user_input}]},
             config=thread_config
         )
+        tools_used = get_tool_calls()
+
+    if tools_used:
+        st.session_state["last_tools_used"] = tools_used
+        logger.info(f"Tools used this turn: {tools_used}")
+    else:
+        st.session_state.pop("last_tools_used", None)
+
     st.rerun()
