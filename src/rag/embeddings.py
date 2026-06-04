@@ -4,6 +4,7 @@ import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from src.utils.config_loader import load_config
+from src.utils.runtime_config import get_override
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -62,7 +63,8 @@ def query_chunks(query: str, session_id: str) -> list[str]:
         return []
 
     model = _get_model()
-    top_k = config["rag"]["top_k"]
+    top_k = get_override("top_k", config["rag"]["top_k"])
+    logger.info(f"RAG query | top_k={top_k}")
 
     query_embedding = model.encode([query]).astype("float32")
     index = faiss.read_index(index_file)

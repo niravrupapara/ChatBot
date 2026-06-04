@@ -13,6 +13,7 @@ from src.rag.retriever import session_has_documents
 from src.memory.short_term import should_summarize, summarize_messages
 from src.memory.long_term import format_memories, NAMESPACE
 from src.utils.config_loader import load_config
+from src.utils.runtime_config import get_override
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -55,8 +56,8 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
     logger.info("Agent node activated")
     all_messages = state["messages"]
     existing_summary = state.get("summary", "")
-    window = config.get("memory", {}).get("window_size", 10)
-    threshold = config.get("memory", {}).get("summary_threshold", 20)
+    window = get_override("window_size", config.get("memory", {}).get("window_size", 10))
+    threshold = get_override("summary_threshold", config.get("memory", {}).get("summary_threshold", 20))
     new_summary = existing_summary
 
     # Summarize old messages if threshold exceeded
@@ -92,11 +93,17 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
         messages = system_messages + messages
 
     while True:
+        model_name = get_override("model_name", config["model"]["name"])
+        temperature = get_override("temperature", config["model"]["temperature"])
+        max_tokens = get_override("max_tokens", config["model"]["max_tokens"])
+        logger.info(f"LLM call | model={model_name} temp={temperature} max_tokens={max_tokens}")
+
         response = client.chat.complete(
-            model=config["model"]["name"],
+            model=model_name,
             messages=messages,
             tools=mistral_tools,
-            temperature=config["model"]["temperature"],
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
 
         msg = response.choices[0].message
