@@ -45,6 +45,9 @@ def _get_mistral_tools() -> list:
     return tools
 
 
+MISTRAL_TOOLS = _get_mistral_tools()
+
+
 def _build_system_message() -> dict | None:
     session_id = get_session_id()
     if session_id and session_has_documents(session_id):
@@ -73,8 +76,6 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
     else:
         messages = recent
 
-    mistral_tools = _get_mistral_tools()
-
     # Build system messages: long-term memory + RAG
     system_messages = []
 
@@ -92,16 +93,16 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
     if system_messages:
         messages = system_messages + messages
 
-    while True:
-        model_name = get_override("model_name", config["model"]["name"])
-        temperature = get_override("temperature", config["model"]["temperature"])
-        max_tokens = get_override("max_tokens", config["model"]["max_tokens"])
-        logger.info(f"LLM call | model={model_name} temp={temperature} max_tokens={max_tokens}")
+    model_name = get_override("model_name", config["model"]["name"])
+    temperature = get_override("temperature", config["model"]["temperature"])
+    max_tokens = get_override("max_tokens", config["model"]["max_tokens"])
+    logger.info(f"LLM call | model={model_name} temp={temperature} max_tokens={max_tokens}")
 
+    while True:
         response = client.chat.complete(
             model=model_name,
             messages=messages,
-            tools=mistral_tools,
+            tools=MISTRAL_TOOLS,
             temperature=temperature,
             max_tokens=max_tokens,
         )
