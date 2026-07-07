@@ -2,12 +2,11 @@
 
 > A production-style multi-tool AI assistant built with **LangGraph**, **Mistral AI**, and **Streamlit** — featuring RAG, persistent multi-session memory, and a configurable settings panel.
 
-<!-- TODO: Replace these with real badge URLs once CI / hosting are wired up -->
+![CI](https://github.com/niravrupapara/ChatBot/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Framework](https://img.shields.io/badge/framework-LangGraph-orange)
 ![LLM](https://img.shields.io/badge/LLM-Mistral%20AI-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Build](https://img.shields.io/badge/build-passing-brightgreen) <!-- TODO: replace with real CI badge -->
 
 ---
 
