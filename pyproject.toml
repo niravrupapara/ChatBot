@@ -14,3 +14,21 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [
+    "data",
+    ".venv",
+    "chatbot.egg-info",
+    "src/api",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # line too long — we allow long strings/prompts
+    "E402",  # module level import not at top — needed for load_dotenv patterns
+    "F401",  # imported but unused — allowed for re-exports
+]
