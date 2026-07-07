@@ -11,6 +11,7 @@ logger = get_logger(__name__)
 config = load_config()
 
 _model = None
+_index_cache: dict = {}  # session_id -> (faiss_index, chunks_list)
 
 
 def _get_model() -> SentenceTransformer:
@@ -52,6 +53,11 @@ def add_chunks(chunks: list[str], session_id: str):
     with open(chunks_file, "wb") as f:
         pickle.dump(stored_chunks, f)
 
+    # Invalidate cache — next query will reload with the new chunks
+    if session_id in _index_cache:
+        _index_cache.pop(session_id)
+        logger.info(f"Cache invalidated for session: {session_id}")
+
     logger.info(f"Stored {len(chunks)} chunks for session: {session_id}")
 
 
@@ -67,10 +73,16 @@ def query_chunks(query: str, session_id: str) -> list[str]:
     logger.info(f"RAG query | top_k={top_k}")
 
     query_embedding = model.encode([query]).astype("float32")
-    index = faiss.read_index(index_file)
 
-    with open(chunks_file, "rb") as f:
-        stored_chunks = pickle.load(f)
+    if session_id in _index_cache:
+        index, stored_chunks = _index_cache[session_id]
+        logger.info(f"RAG cache hit | session={session_id}")
+    else:
+        index = faiss.read_index(index_file)
+        with open(chunks_file, "rb") as f:
+            stored_chunks = pickle.load(f)
+        _index_cache[session_id] = (index, stored_chunks)
+        logger.info(f"RAG cache miss — loaded from disk | session={session_id}")
 
     _, indices = index.search(query_embedding, top_k)
     results = [stored_chunks[i] for i in indices[0] if i < len(stored_chunks)]
