@@ -1,7 +1,11 @@
+from src.utils.config_loader import load_config
+
 from src.utils.llm_client import get_mistral_client
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+config = load_config()
 
 
 client = get_mistral_client()
@@ -23,7 +27,7 @@ def summarize_messages(old_messages: list, existing_summary: str = "") -> str:
     prompt = f"{prior}Summarize this conversation concisely, preserving key facts, user preferences, and context:\n\n{text}"
 
     response = client.chat.complete(
-        model="mistral-small-latest",
+        model=config['model']['name'],
         messages=[{"role": "user", "content": prompt}],
     )
 

@@ -93,7 +93,7 @@ Title:
     )
     try:
         response = _mistral.chat.complete(
-            model="mistral-small-latest",
+            model=config["model"]["name"],
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
         )
