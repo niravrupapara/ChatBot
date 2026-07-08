@@ -1,9 +1,10 @@
-import os
-from mistralai import Mistral
+from src.utils.llm_client import get_mistral_client
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
-client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+
+
+client = get_mistral_client()
 
 
 def should_summarize(messages: list, threshold: int = 20) -> bool:

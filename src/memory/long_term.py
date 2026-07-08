@@ -1,23 +1,23 @@
-import os
 import json
 import sqlite3
 from datetime import datetime
 from typing import Iterable
 
-from mistralai import Mistral
-from dotenv import load_dotenv
+
 from langgraph.store.base import (
     BaseStore, PutOp, SearchOp,
     SearchItem, Op, Result,
 )
+
+from src.utils.llm_client import get_mistral_client
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
 
-load_dotenv()
+
 
 logger = get_logger(__name__)
 config = load_config()
-_mistral = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+_mistral = get_mistral_client()
 
 
 # --- SQLite-backed LangGraph Store ---

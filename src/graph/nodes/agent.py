@@ -1,9 +1,6 @@
-import os
 import json
-from dotenv import load_dotenv
-load_dotenv()
 
-from mistralai import Mistral
+
 from langchain_core.messages import AIMessage
 from langgraph.store.base import BaseStore
 from src.graph.state import ChatState
@@ -12,6 +9,8 @@ from src.agents.tools.rag_search import get_session_id
 from src.rag.retriever import session_has_documents
 from src.memory.short_term import should_summarize, summarize_messages
 from src.memory.long_term import format_memories, NAMESPACE
+
+from src.utils.llm_client import get_mistral_client
 from src.utils.config_loader import load_config
 from src.utils.runtime_config import get_override, add_tool_call
 from src.utils.logger import get_logger
@@ -19,7 +18,8 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 config = load_config()
 
-client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+
+client = get_mistral_client()
 
 TOOL_MAP = {t.name: t for t in ALL_TOOLS}
 
