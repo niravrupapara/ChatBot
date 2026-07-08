@@ -219,3 +219,5 @@ __marimo__/
 
 data/
 data/chat_history.db
+# Local notes / guides
+note/
