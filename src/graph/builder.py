@@ -1,5 +1,5 @@
-import os
-import sqlite3
+from src.utils.db import get_conn, DB_PATH
+
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 from src.graph.state import ChatState
@@ -25,12 +25,11 @@ def build_graph():
     builder.add_edge("remember", END)
     builder.add_edge("agent", END)
 
-    db_path = config["session"]["db_path"]
-    os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
-    conn = sqlite3.connect(db_path, check_same_thread=False)
-    checkpointer = SqliteSaver(conn)
-    store = SqliteStore(db_path)
+    conn = get_conn()
 
-    logger.info(f"Graph built: remember → agent | SQLite: {db_path}")
+    checkpointer = SqliteSaver(conn)
+    store = SqliteStore()
+
+    logger.info(f"Graph built: remember → agent | SQLite: {DB_PATH}")
 
     return builder.compile(checkpointer=checkpointer, store=store)

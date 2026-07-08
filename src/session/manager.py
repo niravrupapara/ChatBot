@@ -1,26 +1,23 @@
-import os
 import uuid
-import sqlite3
 from datetime import datetime
 
+from src.utils.db import get_conn
 from src.utils.llm_client import get_mistral_client
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
 
-
 logger = get_logger(__name__)
 config = load_config()
-DB_PATH = config["session"]["db_path"]
-os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
+
+
+
 
 _mistral = get_mistral_client()
 
-def _get_conn() -> sqlite3.Connection:
-    return sqlite3.connect(DB_PATH, check_same_thread=False)
 
 
 def _init_db() -> None:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS sessions (
                 session_id  TEXT PRIMARY KEY,
@@ -41,7 +38,7 @@ def setup_sessions_table() -> None:
 def generate_session_id(title: str = "New Chat") -> str:
     session_id = str(uuid.uuid4())
     created_at = datetime.now().strftime("%Y-%m-%d %H:%M")
-    with _get_conn() as conn:
+    with get_conn() as conn:
         conn.execute(
             "INSERT INTO sessions (session_id, title, created_at) VALUES (?, ?, ?)",
             (session_id, title, created_at),
@@ -53,7 +50,7 @@ def generate_session_id(title: str = "New Chat") -> str:
 def update_session_title(session_id: str, title: str) -> None:
     # Called after first user message to set a meaningful title
     short_title = title[:40] + "..." if len(title) > 40 else title
-    with _get_conn() as conn:
+    with get_conn() as conn:
         conn.execute(
             "UPDATE sessions SET title = ? WHERE session_id = ?",
             (short_title, session_id),
@@ -106,7 +103,7 @@ Title:
 
 
 def list_sessions() -> list[dict]:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         rows = conn.execute(
             "SELECT session_id, title, created_at FROM sessions ORDER BY created_at DESC"
         ).fetchall()
@@ -116,6 +113,6 @@ def list_sessions() -> list[dict]:
 
 
 def delete_session(session_id: str) -> None:
-    with _get_conn() as conn:
+    with get_conn() as conn:
         conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
     logger.info(f"Session deleted: {session_id}")

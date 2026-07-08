@@ -1,5 +1,6 @@
 import json
-import sqlite3
+
+from src.utils.db import get_conn
 from datetime import datetime
 from typing import Iterable
 
@@ -25,16 +26,13 @@ _mistral = get_mistral_client()
 class SqliteStore(BaseStore):
     """Persistent store — saves memories to SQLite, survives app restarts."""
 
-    def __init__(self, db_path: str):
-        self.db_path = db_path
+    def __init__(self):
         self._setup()
         logger.info("SqliteStore ready")
 
-    def _conn(self) -> sqlite3.Connection:
-        return sqlite3.connect(self.db_path, check_same_thread=False)
 
     def _setup(self):
-        with self._conn() as conn:
+        with get_conn() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS long_term_memory (
                     namespace  TEXT,
@@ -62,7 +60,7 @@ class SqliteStore(BaseStore):
 
     def _put(self, namespace: tuple, key: str, value: dict):
         ns = ".".join(namespace)
-        with self._conn() as conn:
+        with get_conn() as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO long_term_memory VALUES (?, ?, ?, ?)",
                 (ns, key, json.dumps(value), datetime.now().isoformat()),
@@ -71,7 +69,7 @@ class SqliteStore(BaseStore):
 
     def _search(self, namespace_prefix: tuple) -> list[SearchItem]:
         ns = ".".join(namespace_prefix)
-        with self._conn() as conn:
+        with get_conn() as conn:
             rows = conn.execute(
                 "SELECT key, value, updated_at FROM long_term_memory WHERE namespace LIKE ?",
                 (ns + "%",),
