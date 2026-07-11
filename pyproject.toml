@@ -2,15 +2,7 @@
 name = "chatbot"
 version = "0.1.0"
 requires-python = ">=3.11"
-
-dependencies = [
-    "langgraph>=0.2.0",
-    "langchain-mistralai>=0.1.0",
-    "langchain-google-genai>=0.1.0",
-    "python-dotenv>=1.0.0",
-    "pyyaml>=6.0",
-    "streamlit>=1.30.0",
-]
+# Runtime dependencies live in requirements.txt (single source of truth).
 
 [tool.setuptools.packages.find]
 where = ["."]
