@@ -32,7 +32,7 @@ def _to_mistral_format(messages: list) -> list:
 def _get_mistral_tools() -> list:
     tools = []
     for t in ALL_TOOLS:
-        schema = t.args_schema.schema() if t.args_schema else {"type": "object", "properties": {}}
+        schema = t.args_schema.model_json_schema() if t.args_schema else {"type": "object", "properties": {}}
         schema.pop("title", None)
         tools.append({
             "type": "function",
