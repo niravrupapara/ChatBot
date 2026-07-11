@@ -118,7 +118,8 @@ JSON only:"""
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
         )
-        raw = response.choices[0].message.content.strip().strip("```json").strip("```").strip()
+        raw = response.choices[0].message.content.strip()
+        raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         facts = json.loads(raw)
         logger.info(f"Facts extracted: {list(facts.keys())}")
         return facts
