@@ -47,6 +47,8 @@ def _get_mistral_tools() -> list:
 
 MISTRAL_TOOLS = _get_mistral_tools()
 
+MAX_TOOL_ITERATIONS = 10
+
 
 def _build_system_message() -> dict | None:
     session_id = get_session_id()
@@ -98,7 +100,7 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
     max_tokens = get_override("max_tokens", config["model"]["max_tokens"])
     logger.info(f"LLM call | model={model_name} temp={temperature} max_tokens={max_tokens}")
 
-    while True:
+    for iteration in range(MAX_TOOL_ITERATIONS):
         response = client.chat.complete(
             model=model_name,
             messages=messages,
@@ -135,7 +137,7 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
         for tc in msg.tool_calls:
             tool_name = tc.function.name
             tool_args = json.loads(tc.function.arguments)
-            logger.info(f"Calling tool: {tool_name} | args: {tool_args}")
+            logger.info(f"Calling tool: {tool_name} | args: {tool_args} | iter: {iteration + 1}")
 
             tool_fn = TOOL_MAP.get(tool_name)
             tool_result = tool_fn.invoke(tool_args) if tool_fn else f"Tool '{tool_name}' not found."
@@ -147,3 +149,10 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
                 "content": str(tool_result),
                 "tool_call_id": tc.id,
             })
+
+    logger.warning(f"Tool loop hit max iterations ({MAX_TOOL_ITERATIONS}) without final answer")
+    fallback = (
+        f"I wasn't able to complete this request after {MAX_TOOL_ITERATIONS} tool calls. "
+        "Could you rephrase or simplify the question?"
+    )
+    return {"messages": [AIMessage(content=fallback)], "summary": new_summary}
