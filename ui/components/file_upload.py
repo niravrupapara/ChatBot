@@ -20,9 +20,11 @@ def render_file_upload(session_id: str):
         key=f"upload_{session_id}",
     )
 
+    docs_key = f"uploaded_docs_{session_id}"
+
     if uploaded_file:
         doc_name = uploaded_file.name
-        already_uploaded = doc_name in st.session_state.get("uploaded_docs", [])
+        already_uploaded = doc_name in st.session_state.get(docs_key, [])
 
         if not already_uploaded:
             with st.sidebar.status(f"Indexing {doc_name}..."):
@@ -34,12 +36,12 @@ def render_file_upload(session_id: str):
                 index_document(tmp_path, session_id)
                 os.unlink(tmp_path)
 
-                if "uploaded_docs" not in st.session_state:
-                    st.session_state.uploaded_docs = []
-                st.session_state.uploaded_docs.append(doc_name)
+                if docs_key not in st.session_state:
+                    st.session_state[docs_key] = []
+                st.session_state[docs_key].append(doc_name)
 
             logger.info(f"Document indexed: {doc_name} for session: {session_id}")
 
-    if st.session_state.get("uploaded_docs"):
-        for doc in st.session_state.uploaded_docs:
+    if st.session_state.get(docs_key):
+        for doc in st.session_state[docs_key]:
             st.sidebar.caption(f"📄 {doc}")
