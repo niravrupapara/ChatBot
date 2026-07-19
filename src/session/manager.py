@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from src.db.connection import get_conn
+from src.db.repositories import sessions_repo
 from src.utils.llm_client import get_mistral_client
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
@@ -9,21 +9,13 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 config = load_config()
 
-
-
-
 _mistral = get_mistral_client()
-
 
 
 def generate_session_id(title: str = "New Chat") -> str:
     session_id = str(uuid.uuid4())
     created_at = datetime.now().strftime("%Y-%m-%d %H:%M")
-    with get_conn() as conn:
-        conn.execute(
-            "INSERT INTO sessions (session_id, title, created_at) VALUES (?, ?, ?)",
-            (session_id, title, created_at),
-        )
+    sessions_repo.insert(session_id, title, created_at)
     logger.info(f"New session created: {session_id}")
     return session_id
 
@@ -31,11 +23,7 @@ def generate_session_id(title: str = "New Chat") -> str:
 def update_session_title(session_id: str, title: str) -> None:
     # Called after first user message to set a meaningful title
     short_title = title[:40] + "..." if len(title) > 40 else title
-    with get_conn() as conn:
-        conn.execute(
-            "UPDATE sessions SET title = ? WHERE session_id = ?",
-            (short_title, session_id),
-        )
+    sessions_repo.update_title(session_id, short_title)
     logger.info(f"Session title updated: {session_id} → '{short_title}'")
 
 
@@ -84,16 +72,11 @@ Title:
 
 
 def list_sessions() -> list[dict]:
-    with get_conn() as conn:
-        rows = conn.execute(
-            "SELECT session_id, title, created_at FROM sessions ORDER BY created_at DESC"
-        ).fetchall()
-    sessions = [{"session_id": r[0], "title": r[1], "created_at": r[2]} for r in rows]
+    sessions = sessions_repo.list_all()
     logger.info(f"Listed {len(sessions)} sessions")
     return sessions
 
 
 def delete_session(session_id: str) -> None:
-    with get_conn() as conn:
-        conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
+    sessions_repo.delete(session_id)
     logger.info(f"Session deleted: {session_id}")
