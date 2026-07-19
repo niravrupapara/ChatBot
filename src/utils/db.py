@@ -15,8 +15,10 @@ def ensure_db_dir() -> None:
 
 def get_conn() -> sqlite3.Connection:
     """Return a fresh SQLite connection (safe for Streamlit's threading)."""
-
-    return sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    return conn
 
 ensure_db_dir()
 logger.info(f"SQLite DB ready at: {DB_PATH}")
