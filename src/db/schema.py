@@ -29,6 +29,9 @@ def init_schema(conn: sqlite3.Connection | None = None) -> None:
                 created_at  TEXT
             )
         """)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions(created_at)"
+        )
         conn.execute("""
             CREATE TABLE IF NOT EXISTS long_term_memory (
                 namespace  TEXT,
