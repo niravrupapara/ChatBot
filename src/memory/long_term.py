@@ -27,21 +27,7 @@ class SqliteStore(BaseStore):
     """Persistent store — saves memories to SQLite, survives app restarts."""
 
     def __init__(self):
-        self._setup()
         logger.info("SqliteStore ready")
-
-
-    def _setup(self):
-        with get_conn() as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS long_term_memory (
-                    namespace  TEXT,
-                    key        TEXT,
-                    value      TEXT,
-                    updated_at TEXT,
-                    PRIMARY KEY (namespace, key)
-                )
-            """)
 
     async def abatch(self, ops: Iterable[Op]) -> list[Result]:
         return self.batch(ops)

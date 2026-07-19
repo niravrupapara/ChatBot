@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+from src.db.schema import init_schema
 from src.graph.builder import build_graph
 from src.session.manager import generate_session_id, update_session_title, generate_title
 from src.utils.logger import get_logger
@@ -11,6 +12,8 @@ from src.utils.runtime_config import reset_tool_calls, get_tool_calls
 from ui.components.sidebar import render_sidebar
 
 logger = get_logger(__name__)
+
+init_schema()
 
 st.set_page_config(page_title="Chatbot", page_icon="🤖", layout="wide")
 

@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from src.db.schema import init_schema
 from src.graph.builder import build_graph
 from src.session.manager import generate_session_id
 from src.utils.logger import get_logger
@@ -6,6 +7,7 @@ from src.utils.logger import get_logger
 load_dotenv()
 logger = get_logger(__name__)
 
+init_schema()
 graph = build_graph()
 session_id = generate_session_id()
 thread_config = {"configurable": {"thread_id": session_id}}

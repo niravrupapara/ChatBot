@@ -16,25 +16,6 @@ _mistral = get_mistral_client()
 
 
 
-def _init_db() -> None:
-    with get_conn() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS sessions (
-                session_id  TEXT PRIMARY KEY,
-                title       TEXT,
-                created_at  TEXT
-            )
-        """)
-    logger.info("Sessions table ready")
-
-
-_init_db()
-
-
-def setup_sessions_table() -> None:
-    _init_db()
-
-
 def generate_session_id(title: str = "New Chat") -> str:
     session_id = str(uuid.uuid4())
     created_at = datetime.now().strftime("%Y-%m-%d %H:%M")

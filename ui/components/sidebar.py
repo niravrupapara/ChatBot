@@ -3,7 +3,6 @@ from src.session.manager import (
     generate_session_id,
     list_sessions,
     delete_session,
-    setup_sessions_table,
 )
 from ui.components.file_upload import render_file_upload
 from src.utils.logger import get_logger
@@ -12,8 +11,6 @@ logger = get_logger(__name__)
 
 
 def render_sidebar() -> None:
-    setup_sessions_table()
-
     with st.sidebar:
         st.title("Chats")
 
