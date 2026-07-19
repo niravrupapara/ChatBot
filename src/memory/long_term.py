@@ -1,6 +1,6 @@
 import json
 
-from src.utils.db import get_conn
+from src.db.connection import get_conn
 from datetime import datetime
 from typing import Iterable
 

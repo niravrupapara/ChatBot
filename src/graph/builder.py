@@ -1,4 +1,4 @@
-from src.utils.db import get_conn, DB_PATH
+from src.db.connection import get_conn, DB_PATH
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite import SqliteSaver

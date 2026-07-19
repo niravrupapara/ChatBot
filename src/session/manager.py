@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from src.utils.db import get_conn
+from src.db.connection import get_conn
 from src.utils.llm_client import get_mistral_client
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
