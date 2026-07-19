@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from src.db.models import Session
 from src.db.repositories import sessions_repo
 from src.rag.retriever import delete_session_documents
 from src.utils.llm_client import get_mistral_client
@@ -72,7 +73,7 @@ Title:
         return user_message[:40] + "..." if len(user_message) > 40 else user_message
 
 
-def list_sessions() -> list[dict]:
+def list_sessions() -> list[Session]:
     sessions = sessions_repo.list_all()
     logger.info(f"Listed {len(sessions)} sessions")
     return sessions

@@ -1,4 +1,5 @@
 from src.db.connection import get_conn
+from src.db.models import Session
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -22,12 +23,12 @@ def update_title(session_id: str, title: str) -> None:
     logger.info(f"Session title row updated: {session_id}")
 
 
-def list_all() -> list[dict]:
+def list_all() -> list[Session]:
     with get_conn() as conn:
         rows = conn.execute(
             "SELECT session_id, title, created_at FROM sessions ORDER BY created_at DESC"
         ).fetchall()
-    return [{"session_id": r[0], "title": r[1], "created_at": r[2]} for r in rows]
+    return [Session(session_id=r[0], title=r[1], created_at=r[2]) for r in rows]
 
 
 def delete(session_id: str) -> None:
