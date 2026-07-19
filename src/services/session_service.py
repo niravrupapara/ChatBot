@@ -15,7 +15,7 @@ _mistral = get_mistral_client()
 
 def generate_session_id(title: str = "New Chat") -> str:
     session_id = str(uuid.uuid4())
-    created_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    created_at = datetime.now().isoformat(timespec="seconds")
     sessions_repo.insert(session_id, title, created_at)
     logger.info(f"New session created: {session_id}")
     return session_id
