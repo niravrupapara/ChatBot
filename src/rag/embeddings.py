@@ -94,3 +94,17 @@ def query_chunks(query: str, session_id: str) -> list[str]:
 def has_documents(session_id: str) -> bool:
     index_file, _ = _get_paths(session_id)
     return os.path.exists(index_file)
+
+
+def delete_session_index(session_id: str) -> None:
+    index_file, chunks_file = _get_paths(session_id)
+    removed = False
+    for path in (index_file, chunks_file):
+        if os.path.exists(path):
+            os.remove(path)
+            removed = True
+    _index_cache.pop(session_id, None)
+    if removed:
+        logger.info(f"Deleted FAISS index for session: {session_id}")
+    else:
+        logger.info(f"No FAISS index found for session: {session_id}")

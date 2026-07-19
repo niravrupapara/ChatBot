@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from src.db.repositories import sessions_repo
+from src.rag.retriever import delete_session_documents
 from src.utils.llm_client import get_mistral_client
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
@@ -79,4 +80,6 @@ def list_sessions() -> list[dict]:
 
 def delete_session(session_id: str) -> None:
     sessions_repo.delete(session_id)
+    sessions_repo.delete_checkpoints(session_id)
+    delete_session_documents(session_id)
     logger.info(f"Session deleted: {session_id}")

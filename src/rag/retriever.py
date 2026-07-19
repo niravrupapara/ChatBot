@@ -1,5 +1,5 @@
 from src.rag.ingestion import ingest_file
-from src.rag.embeddings import add_chunks, query_chunks, has_documents
+from src.rag.embeddings import add_chunks, query_chunks, has_documents, delete_session_index
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -21,3 +21,7 @@ def retrieve(query: str, session_id: str) -> str:
 
 def session_has_documents(session_id: str) -> bool:
     return has_documents(session_id)
+
+
+def delete_session_documents(session_id: str) -> None:
+    delete_session_index(session_id)

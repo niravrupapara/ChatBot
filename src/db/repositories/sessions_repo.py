@@ -34,3 +34,10 @@ def delete(session_id: str) -> None:
     with get_conn() as conn:
         conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
     logger.info(f"Session row deleted: {session_id}")
+
+
+def delete_checkpoints(session_id: str) -> None:
+    with get_conn() as conn:
+        conn.execute("DELETE FROM checkpoints WHERE thread_id = ?", (session_id,))
+        conn.execute("DELETE FROM writes WHERE thread_id = ?", (session_id,))
+    logger.info(f"Checkpoint/write rows cleared for: {session_id}")
