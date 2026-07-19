@@ -1,5 +1,5 @@
 import streamlit as st
-from src.session.manager import (
+from src.services.session_service import (
     generate_session_id,
     list_sessions,
     delete_session,

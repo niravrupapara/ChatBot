@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from src.db.schema import init_schema
 from src.graph.builder import build_graph
-from src.session.manager import generate_session_id
+from src.services.session_service import generate_session_id
 from src.utils.logger import get_logger
 
 load_dotenv()

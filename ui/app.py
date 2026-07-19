@@ -6,7 +6,7 @@ load_dotenv()
 
 from src.db.schema import init_schema
 from src.graph.builder import build_graph
-from src.session.manager import generate_session_id, update_session_title, generate_title
+from src.services.session_service import generate_session_id, update_session_title, generate_title
 from src.utils.logger import get_logger
 from src.utils.runtime_config import reset_tool_calls, get_tool_calls
 from ui.components.sidebar import render_sidebar
