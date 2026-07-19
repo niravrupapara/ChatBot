@@ -221,3 +221,6 @@ data/
 data/chat_history.db
 # Local notes / guides
 note/
+
+# Local resume prep — not for repo
+PROJECT_SUMMARY.txt
