@@ -1,6 +1,5 @@
 import json
 
-from src.db.connection import get_conn
 from datetime import datetime
 from typing import Iterable
 
@@ -10,6 +9,7 @@ from langgraph.store.base import (
     SearchItem, Op, Result,
 )
 
+from src.db.repositories import memory_repo
 from src.utils.llm_client import get_mistral_client
 from src.utils.config_loader import load_config
 from src.utils.logger import get_logger
@@ -46,28 +46,20 @@ class SqliteStore(BaseStore):
 
     def _put(self, namespace: tuple, key: str, value: dict):
         ns = ".".join(namespace)
-        with get_conn() as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO long_term_memory VALUES (?, ?, ?, ?)",
-                (ns, key, json.dumps(value), datetime.now().isoformat()),
-            )
+        memory_repo.upsert(ns, key, json.dumps(value), datetime.now().isoformat())
         logger.info(f"Memory saved → {ns}/{key}")
 
     def _search(self, namespace_prefix: tuple) -> list[SearchItem]:
         ns = ".".join(namespace_prefix)
-        with get_conn() as conn:
-            rows = conn.execute(
-                "SELECT key, value, updated_at FROM long_term_memory WHERE namespace LIKE ?",
-                (ns + "%",),
-            ).fetchall()
+        rows = memory_repo.search_by_prefix(ns)
         logger.info(f"Memory search → {ns} | found {len(rows)}")
         return [
             SearchItem(
-                value=json.loads(r[1]),
-                key=r[0],
+                value=json.loads(r["value"]),
+                key=r["key"],
                 namespace=namespace_prefix,
-                created_at=datetime.fromisoformat(r[2]),
-                updated_at=datetime.fromisoformat(r[2]),
+                created_at=datetime.fromisoformat(r["updated_at"]),
+                updated_at=datetime.fromisoformat(r["updated_at"]),
                 score=None,
             )
             for r in rows
