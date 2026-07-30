@@ -18,12 +18,15 @@ def get_stock_price(ticker: str) -> str:
         if not price:
             return f"Could not find price for ticker '{ticker}'."
 
+        market_cap = info.get("marketCap")
+        market_cap_str = f"${market_cap:,}" if isinstance(market_cap, (int, float)) else "N/A"
+
         result = (
             f"Stock info for {info.get('longName', ticker.upper())} ({ticker.upper()}):\n"
             f"  Price     : ${price}\n"
             f"  52W High  : ${info.get('fiftyTwoWeekHigh', 'N/A')}\n"
             f"  52W Low   : ${info.get('fiftyTwoWeekLow', 'N/A')}\n"
-            f"  Market Cap: ${info.get('marketCap', 'N/A'):,}\n"
+            f"  Market Cap: {market_cap_str}\n"
             f"  Sector    : {info.get('sector', 'N/A')}"
         )
         logger.info(f"Stock data fetched for {ticker.upper()}")
