@@ -66,7 +66,7 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
     new_summary = existing_summary
 
     # Summarize old messages if threshold exceeded
-    if should_summarize(all_messages, threshold):
+    if should_summarize(all_messages, threshold, existing_summary, window):
         old_messages = all_messages[:-window]
         new_summary = summarize_messages(old_messages, existing_summary)
         logger.info("Conversation summarized")
@@ -146,6 +146,7 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
 
             messages.append({
                 "role": "tool",
+                "name": tool_name,
                 "content": str(tool_result),
                 "tool_call_id": tc.id,
             })

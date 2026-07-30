@@ -11,8 +11,17 @@ config = load_config()
 client = get_mistral_client()
 
 
-def should_summarize(messages: list, threshold: int = 20) -> bool:
-    return len(messages) > threshold
+def should_summarize(
+    messages: list,
+    threshold: int = 20,
+    existing_summary: str = "",
+    window: int = 6
+) -> bool:
+    if not existing_summary:
+        return len(messages) > threshold
+    # If summary already exists, only re-summarize when a full new batch accumulates
+    unsummarized = len(messages) - window
+    return unsummarized >= threshold * 2
 
 
 def summarize_messages(old_messages: list, existing_summary: str = "") -> str:
