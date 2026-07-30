@@ -1,15 +1,14 @@
-import requests
 import streamlit as st
 from streamlit_chat import message
 from dotenv import load_dotenv
 load_dotenv()
 
-API_URL = "http://localhost:8000"
 
 from src.db.schema import init_schema
 from src.graph.builder import build_graph
 from src.services.session_service import generate_session_id, update_session_title, generate_title
 from src.utils.logger import get_logger
+from src.utils.runtime_config import reset_tool_calls, get_tool_calls
 from ui.components.sidebar import render_sidebar
 
 logger = get_logger(__name__)
@@ -63,16 +62,12 @@ if user_input:
     message(user_input, is_user=True, key="user_input_current")
 
     with st.spinner("Thinking..."):
-        try:
-            res = requests.post(
-                f"{API_URL}/api/v1/chat",
-                json={"message": user_input, "session_id": st.session_state.session_id},
-                timeout=60,
-            )
-            tools_used = res.json().get("tools_used", []) if res.status_code == 200 else []
-        except Exception as e:
-            logger.error(f"FastAPI request failed: {e}")
-            tools_used = []
+        reset_tool_calls()
+        graph.invoke(
+            {"messages": [{"role": "user", "content": user_input}]},
+            config=thread_config
+        )
+        tools_used = get_tool_calls()
 
     if tools_used:
         st.session_state["last_tools_used"] = tools_used
