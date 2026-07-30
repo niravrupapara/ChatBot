@@ -63,14 +63,15 @@ Title:
         response = _mistral.chat.complete(
             model=config["model"]["name"],
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
+            temperature=0.2,
+            max_tokens=30,
         )
         title = response.choices[0].message.content.strip()
         logger.info(f"LLM title generated: '{title}'")
         return title
     except Exception as e:
         logger.warning(f"Title generation failed, using fallback: {e}")
-        return user_message[:40] + "..." if len(user_message) > 40 else user_message
+        return user_message[:30] + "..." if len(user_message) > 30 else user_message
 
 
 def list_sessions() -> list[Session]:

@@ -25,15 +25,15 @@ if "session_id" not in st.session_state:
 
 render_sidebar()
 
-# Deferred title generation — runs after first response is shown
-if st.session_state.get("needs_title"):
-    session_id = st.session_state.session_id
-    first_msg = st.session_state.pop("first_message", "")
-    logger.info(f"Generating title for session: {session_id}")
-    title = generate_title(first_msg)
-    update_session_title(session_id, title)
-    st.session_state.needs_title = False
-    st.rerun()
+# # Deferred title generation — runs after first response is shown
+# if st.session_state.get("needs_title"):
+#     session_id = st.session_state.session_id
+#     first_msg = st.session_state.pop("first_message", "")
+#     logger.info(f"Generating title for session: {session_id}")
+#     title = generate_title(first_msg)
+#     update_session_title(session_id, title)
+#     st.session_state.needs_title = False
+#     st.rerun()
 
 st.title("Chatbot")
 
@@ -53,13 +53,10 @@ if st.session_state.get("last_tools_used"):
 
 user_input = st.chat_input("Type your message...")
 if user_input:
-    # Flag title generation for after first response is shown
-    if len(messages) == 0:
-        st.session_state.needs_title = True
-        st.session_state.first_message = user_input
-        logger.info("First message detected — title generation deferred")
+    is_first_message = len(messages) == 0
 
     message(user_input, is_user=True, key="user_input_current")
+
 
     with st.spinner("Thinking..."):
         reset_tool_calls()
@@ -68,6 +65,14 @@ if user_input:
             config=thread_config
         )
         tools_used = get_tool_calls()
+
+        #Single-pass fast title generation on first message
+
+        if is_first_message:
+            logger.info(f"First message detected - generating fast title for session: {st.session_state.session_id}")
+            title = generate_title(user_input)
+            update_session_title(st.session_state.session_id, title)
+
 
     if tools_used:
         st.session_state["last_tools_used"] = tools_used
