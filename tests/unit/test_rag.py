@@ -8,10 +8,10 @@ def test_query_chunks_bounds():
     try:
         # Add only 1 chunk to the index
         add_chunks(["Single test chunk content"], session_id)
-        
+
         # Query with top_k > available chunks (default top_k is 3)
         results = query_chunks("test query", session_id)
-        
+
         # Must return exactly 1 chunk, NOT 3 (which would happen if -1 index returned stored_chunks[-1])
         assert len(results) == 1
         assert results[0] == "Single test chunk content"
