@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from src.memory.short_term import should_summarize
 
 def test_should_summarize_initial():
