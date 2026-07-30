@@ -85,7 +85,7 @@ def query_chunks(query: str, session_id: str) -> list[str]:
         logger.info(f"RAG cache miss — loaded from disk | session={session_id}")
 
     _, indices = index.search(query_embedding, top_k)
-    results = [stored_chunks[i] for i in indices[0] if i < len(stored_chunks)]
+    results = [stored_chunks[i] for i in indices[0] if 0 <= i < len(stored_chunks)]
 
     logger.info(f"Retrieved {len(results)} chunks for session: {session_id}")
     return results
