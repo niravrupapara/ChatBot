@@ -1,0 +1,17 @@
+# Files and directories ignored by Docker during build
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+.env
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+data/vector_store/*.index
+data/vector_store/*.pkl
