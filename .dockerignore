@@ -13,5 +13,6 @@ env/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
-data/vector_store/*.index
-data/vector_store/*.pkl
+
+# Ignore local database and vector store files so images build 100% clean
+data/
