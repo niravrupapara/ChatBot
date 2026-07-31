@@ -2,7 +2,7 @@
 
 # 🤖 LangGraph Multi-Tool AI Assistant & REST Service
 
-**An enterprise-grade, multi-tool AI Agent system** built with LangGraph, Mistral AI, Streamlit, and FastAPI — featuring per-session RAG, two-tier persistent memory, native tool calling, fast single-pass title generation, and Docker containerization.
+**An enterprise-grade, multi-tool AI Agent system** built with LangGraph, Mistral AI, Streamlit, and FastAPI — featuring per-session RAG, two-tier persistent memory, native tool calling, automatic chat title generation, and Docker containerization.
 
 [![Docker Image](https://img.shields.io/badge/docker-niravrupapara%2Fchatbot-blue?style=for-the-badge&logo=docker)](https://hub.docker.com/r/niravrupapara/chatbot)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue?style=for-the-badge&logo=python)
@@ -16,13 +16,81 @@
 
 ---
 
+## 📍 Table of Contents
+
+- [Executive Summary](#-executive-summary)
+- [Why This Project?](#-why-this-project)
+- [Key Challenges Solved](#-key-challenges-solved)
+- [Performance](#-performance)
+- [User Interface Showcase](#-user-interface-showcase)
+- [System Architecture](#-system-architecture)
+- [Execution Workflow](#-execution-workflow)
+- [Repository Structure](#-repository-structure)
+- [Core Features](#-core-features)
+- [Quickstart & Execution Guide](#-quickstart--execution-guide)
+  - [Method 1: Docker Run (Recommended)](#method-1-docker-run-recommended--zero-local-python-setup-needed)
+  - [Method 2: Local Python Setup](#method-2-local-python-setup-git-clone)
+- [REST API Reference](#-rest-api--microservice-package-srcapi)
+- [Configuration & Control Knobs](#-configuration--control-knobs)
+- [Testing & CI/CD Pipeline](#-testing--cicd-pipeline)
+- [License](#-license)
+
+---
+
 ## 📌 Executive Summary
 
-This repository contains an AI Agent application engineered around a **LangGraph State Machine**. Moving beyond basic prompt wrappers, this platform orchestrates reasoning, parallel long-term memory extraction, native tool execution, document retrieval, and single-pass LLM session titling in a modular, containerized pipeline.
+**LangGraph Multi-Tool AI Assistant** is a production-ready conversational AI system featuring:
 
-The project supports **two execution environments**:
-1. **Interactive Streamlit UI**: Direct low-latency graph execution with per-session chat history and fast automatic titling.
-2. **Standalone FastAPI REST Service (`src/api/`)**: Built-in REST endpoints (`/health` & `/api/v1/chat`) for web service integration.
+- 🛠️ **Native Tool Calling**: Autonomous multi-turn execution (Web search, Math, Stock quotes, Document search)
+- 📚 **Session-Based RAG**: PDF text chunking, `all-MiniLM-L6-v2` embeddings, and per-session FAISS vector search
+- 🧠 **Two-Tier Cognitive Memory**: Short-term window summarization + parallel long-term SQLite user fact store
+- 📱 **Interactive Streamlit UI**: Multi-session sidebar management with automatic chat title generation (~0.3s)
+- ⚡ **FastAPI REST API (`src/api/`)**: Production REST microservice endpoints with OpenAPI Swagger docs (`/docs`)
+- 🐳 **Docker Deployment**: Pre-built container published on Docker Hub (`niravrupapara/chatbot:latest`)
+
+---
+
+## 💡 Why This Project?
+
+Most AI projects are basic API wrappers. This project demonstrates **how production AI systems are actually engineered** — combining state machine orchestration, parallel background memory extraction, session-isolated RAG, and containerized REST microservices into an enterprise-grade platform.
+
+---
+
+## 🛠️ Key Challenges Solved
+
+- ⚡ **Parallel Memory**: Hidden extraction latency via LangGraph parallel node execution
+- 🔒 **Isolated RAG**: Per-session FAISS indices preventing document data leakage
+- 🏷️ **Automatic Chat Title Generation**: 0.3s single-pass session title generation on first turn
+- ⚙️ **Runtime Configuration**: Dynamic runtime parameter overrides without app restarts
+- 🐳 **Optimized Docker Builds**: 1-second builds via optimized layer ordering & CPU PyTorch
+
+---
+
+## ⚡ Performance
+
+| Metric | Specification |
+| :--- | :--- |
+| **Title Generation** | **~0.3s** (Automatic chat title generation) |
+| **Embedding Model** | `all-MiniLM-L6-v2` (SentenceTransformers CPU) |
+| **Vector Search** | FAISS L2 / Cosine Similarity (In-Memory Cached) |
+| **Memory Sync** | Parallel node execution (Zero latency overhead) |
+| **Docker Rebuild** | **~1s** (Optimized Docker builds via layer caching) |
+
+---
+
+## 🖼️ User Interface Showcase
+
+<div align="center">
+
+### 💬 Interactive Multi-Session Chat Interface
+![Chat Interface](ui/assets/chat_interface.png)
+
+<br/>
+
+### ⚙️ Live Runtime Settings Panel
+![Settings Panel](ui/assets/settings_panel.png)
+
+</div>
 
 ---
 
@@ -64,6 +132,32 @@ The project supports **two execution environments**:
        │  • get_stock_price (yFinance)│             │  • 📊 FAISS Vector Index  │
        │  • rag_search (FAISS PDF)    │             │    (data/vector_store/)   │
        └──────────────────────────────┘             └───────────────────────────┘
+```
+
+---
+
+## 🔄 Execution Workflow
+
+```
+User Query
+   │
+   ▼
+Streamlit UI / FastAPI REST
+   │
+   ▼
+LangGraph State Machine
+   │
+   ├──────► Tool Needed? (web_search, calculator, get_stock_price)
+   │
+   ├──────► RAG Search Needed? (FAISS PDF Vector Retriever)
+   │
+   ├──────► Parallel Memory Check (SQLite SqliteStore User Facts)
+   │
+   ▼
+Mistral LLM Reasoning Synthesis
+   │
+   ▼
+Final Response to User
 ```
 
 ---
@@ -113,6 +207,9 @@ The project supports **two execution environments**:
 │       ├── 📄 runtime_config.py        # Dynamic runtime configuration overrides
 │       └── 📄 llm_client.py            # Mistral AI SDK client initializer
 ├── 📂 ui/                              # Streamlit frontend web application
+│   ├── 📂 assets/                      # UI Screenshots & Assets for documentation
+│   │   ├── 🖼️ chat_interface.png        # Interactive Chat UI screenshot
+│   │   └── 🖼️ settings_panel.png        # Live Runtime Settings Panel screenshot
 │   ├── 📂 components/                  # Reusable Streamlit UI components
 │   │   ├── 📄 chat_window.py           # Message stream & tool execution indicators
 │   │   ├── 📄 file_upload.py           # PDF uploader sidebar component
@@ -128,18 +225,18 @@ The project supports **two execution environments**:
 
 ---
 
-## ✨ Core Features & Capabilities
+## ✨ Core Features
 
-- **⚡ LangGraph State Machine**: Parallel execution of `agent_node` (reasoning & tool loop) and `remember_node` (long-term memory fact extractor).
-- **🛠️ Native Tool Loop**: 4 built-in tools (`web_search`, `calculator`, `get_stock_price`, `rag_search`) with an iterative tool-use loop up to 10 iterations.
-- **🏷️ Fast Single-Pass LLM Titling**: Generates concise 3-4 word chat session titles via Mistral AI (`max_tokens=10`, `temperature=0.2`) on the first conversation turn, updating SQLite instantly in ~0.3s without extra UI re-renders or page flickers.
-- **📄 Session-Isolated RAG Engine**: Upload PDFs per session, embed with `sentence-transformers/all-MiniLM-L6-v2`, and search using per-session FAISS vector indices.
-- **🧠 Two-Tier Memory System**:
-  - **Short-Term Memory**: Automatic window summarization of conversation history when threshold (20 messages) is reached.
-  - **Long-Term Memory**: Durable user facts (name, preferences, tech stack) extracted in parallel and persisted to SQLite via `SqliteStore`.
-- **📱 Multi-Session Streamlit Web UI**: Sidebar chat session management with full SQLite chat history persistence.
-- **🌐 Standalone REST API (`src/api/`)**: Production FastAPI service (`GET /health` & `POST /api/v1/chat`) with OpenAPI Swagger docs (`/docs`).
-- **🐳 Docker Containerization**: Pre-built image published on Docker Hub (`niravrupapara/chatbot:latest`) with CPU-optimized PyTorch.
+| Feature | Description |
+| :--- | :--- |
+| **LangGraph Core** | Parallel reasoning & memory state machine |
+| **Session RAG** | PDF chunking + per-session FAISS vector search |
+| **Two-Tier Memory** | Short-term summary + long-term SQLite user facts |
+| **Autonomous Tools** | Web search, Math, Stock quotes, Document search |
+| **Automatic Titling** | 0.3s single-pass session title generator |
+| **Streamlit Web UI** | Multi-session sidebar & live runtime config sliders |
+| **FastAPI REST API** | Production microservice endpoints with Swagger docs |
+| **Docker Deployment** | One-command run from Docker Hub |
 
 ---
 
@@ -155,6 +252,7 @@ Testing the app via Docker requires **2 simple steps**:
 ```bash
 docker pull niravrupapara/chatbot:latest
 ```
+🔗 **Docker Hub Repository**: [hub.docker.com/r/niravrupapara/chatbot](https://hub.docker.com/r/niravrupapara/chatbot)
 
 #### Step 2: Run the Container
 ```bash
