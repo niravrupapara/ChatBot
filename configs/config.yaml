@@ -11,7 +11,7 @@ logging:
   format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 
 memory:
-  summary_threshold: 20
+  summary_threshold: 10
   window_size: 6
 
 rag:

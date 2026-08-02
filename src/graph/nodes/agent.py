@@ -1,23 +1,20 @@
 import json
 
-
 from langchain_core.messages import AIMessage
 from langgraph.store.base import BaseStore
-from src.graph.state import ChatState
 from src.agents.tools import ALL_TOOLS
 from src.agents.tools.rag_search import get_session_id
+from src.graph.state import ChatState
+from src.memory.long_term import NAMESPACE, format_memories
+from src.memory.short_term import RECENT_WINDOW, should_summarize, summarize_messages
 from src.rag.retriever import session_has_documents
-from src.memory.short_term import should_summarize, summarize_messages
-from src.memory.long_term import format_memories, NAMESPACE
-
-from src.utils.llm_client import get_mistral_client
 from src.utils.config_loader import load_config
-from src.utils.runtime_config import get_override, add_tool_call
+from src.utils.llm_client import get_mistral_client
 from src.utils.logger import get_logger
+from src.utils.runtime_config import add_tool_call, get_override
 
 logger = get_logger(__name__)
 config = load_config()
-
 
 client = get_mistral_client()
 
@@ -40,7 +37,7 @@ def _get_mistral_tools() -> list:
                 "name": t.name,
                 "description": t.description,
                 "parameters": schema,
-            }
+            },
         })
     return tools
 
@@ -53,7 +50,13 @@ MAX_TOOL_ITERATIONS = 10
 def _build_system_message() -> dict | None:
     session_id = get_session_id()
     if session_id and session_has_documents(session_id):
-        return {"role": "system", "content": "The user has uploaded documents. When answering questions about their content, always use the rag_search tool to find relevant information before responding."}
+        return {
+            "role": "system",
+            "content": (
+                "The user has uploaded documents. When answering questions about their content, "
+                "always use the rag_search tool to find relevant information before responding."
+            ),
+        }
     return None
 
 
@@ -61,18 +64,26 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
     logger.info("Agent node activated")
     all_messages = state["messages"]
     existing_summary = state.get("summary", "")
-    window = get_override("window_size", config.get("memory", {}).get("window_size", 10))
-    threshold = get_override("summary_threshold", config.get("memory", {}).get("summary_threshold", 20))
+    last_summarized_count = state.get("last_summarized_count", 0)
+
+    threshold = get_override("summary_threshold", config.get("memory", {}).get("summary_threshold", 10))
+
     new_summary = existing_summary
+    new_last_summarized_count = last_summarized_count
+    message_count = len(all_messages)
 
-    # Summarize old messages if threshold exceeded
-    if should_summarize(all_messages, threshold, existing_summary, window):
-        old_messages = all_messages[:-window]
-        new_summary = summarize_messages(old_messages, existing_summary)
-        logger.info("Conversation summarized")
+    # Check if summarization should trigger by passing message_count (an integer)
+    if should_summarize(message_count, threshold, existing_summary, last_summarized_count):
+        target_cutoff = message_count - RECENT_WINDOW
+        new_unsummarized_messages = all_messages[last_summarized_count:target_cutoff]
 
-    # Build LLM context: summary (if any) + recent messages only
-    recent = _to_mistral_format(all_messages[-window:])
+        if new_unsummarized_messages:
+            new_summary = summarize_messages(new_unsummarized_messages, existing_summary)
+            new_last_summarized_count = target_cutoff
+            logger.info(f"Updated summarized cutoff index to {new_last_summarized_count}")
+
+    # Build LLM context: summary (if any) + 4 recent messages verbatim
+    recent = _to_mistral_format(all_messages[-RECENT_WINDOW:])
     if new_summary:
         messages = [{"role": "system", "content": f"Summary of earlier conversation:\n{new_summary}"}] + recent
     else:
@@ -114,7 +125,11 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
         # No tool call — final answer
         if not msg.tool_calls:
             logger.info("Agent final response ready")
-            return {"messages": [AIMessage(content=msg.content)], "summary": new_summary}
+            return {
+                "messages": [AIMessage(content=msg.content)],
+                "summary": new_summary,
+                "last_summarized_count": new_last_summarized_count,
+            }
 
         # Add assistant message with tool calls to history
         messages.append({
@@ -127,10 +142,10 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
                     "function": {
                         "name": tc.function.name,
                         "arguments": tc.function.arguments,
-                    }
+                    },
                 }
                 for tc in msg.tool_calls
-            ]
+            ],
         })
 
         # Execute each tool and add result to history
@@ -156,4 +171,8 @@ def agent_node(state: ChatState, store: BaseStore) -> dict:
         f"I wasn't able to complete this request after {MAX_TOOL_ITERATIONS} tool calls. "
         "Could you rephrase or simplify the question?"
     )
-    return {"messages": [AIMessage(content=fallback)], "summary": new_summary}
+    return {
+        "messages": [AIMessage(content=fallback)],
+        "summary": new_summary,
+        "last_summarized_count": new_last_summarized_count,
+    }
