@@ -224,3 +224,6 @@ note/
 
 # Local resume prep — not for repo
 PROJECT_SUMMARY.txt
+
+# Application logs
+logs/
