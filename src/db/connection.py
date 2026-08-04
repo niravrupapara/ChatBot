@@ -9,16 +9,18 @@ config = load_config()
 
 DB_PATH = config["session"]["db_path"]
 
+
 def ensure_db_dir() -> None:
     """Make sure the parent folder for the SQLite DB exists."""
     os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
 
+
 def get_conn() -> sqlite3.Connection:
-    """Return a fresh SQLite connection (safe for Streamlit's threading)."""
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    """Return a fresh SQLite connection (safe for Streamlit Cloud & multi-threading)."""
+    conn = sqlite3.connect(DB_PATH, timeout=5.0, check_same_thread=False)
     conn.execute("PRAGMA foreign_keys = ON")
-    conn.execute("PRAGMA journal_mode = WAL")
     return conn
+
 
 ensure_db_dir()
 logger.info(f"SQLite DB ready at: {DB_PATH}")
