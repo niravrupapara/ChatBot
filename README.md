@@ -2,7 +2,7 @@
 
 # 🤖 LangGraph Multi-Tool AI Assistant & REST Service
 
-**An enterprise-grade, multi-tool AI Agent system** built with LangGraph, Mistral AI, Streamlit, and FastAPI — featuring per-session RAG, two-tier persistent memory, native tool calling, automatic chat title generation, and Docker containerization.
+**An enterprise-grade, multi-tool AI Agent system** built with LangGraph, Mistral AI, Streamlit, and FastAPI — featuring per-session RAG, two-tier persistent memory, native tool calling, automatic chat title generation, dual logging storage, and Docker containerization.
 
 [![Docker Image](https://img.shields.io/badge/docker-niravrupapara%2Fchatbot-blue?style=for-the-badge&logo=docker)](https://hub.docker.com/r/niravrupapara/chatbot)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue?style=for-the-badge&logo=python)
@@ -16,27 +16,6 @@
 
 ---
 
-## 📍 Table of Contents
-
-- [Executive Summary](#-executive-summary)
-- [Why This Project?](#-why-this-project)
-- [Key Challenges Solved](#-key-challenges-solved)
-- [Performance](#-performance)
-- [User Interface Showcase](#-user-interface-showcase)
-- [System Architecture](#-system-architecture)
-- [Execution Workflow](#-execution-workflow)
-- [Repository Structure](#-repository-structure)
-- [Core Features](#-core-features)
-- [Quickstart & Execution Guide](#-quickstart--execution-guide)
-  - [Method 1: Docker Run (Recommended)](#method-1-docker-run-recommended--zero-local-python-setup-needed)
-  - [Method 2: Local Python Setup](#method-2-local-python-setup-git-clone)
-- [REST API Reference](#-rest-api--microservice-package-srcapi)
-- [Configuration & Control Knobs](#-configuration--control-knobs)
-- [Testing & CI/CD Pipeline](#-testing--cicd-pipeline)
-- [License](#-license)
-
----
-
 ## 📌 Executive Summary
 
 **LangGraph Multi-Tool AI Assistant** is a production-ready conversational AI system featuring:
@@ -45,36 +24,26 @@
 - 📚 **Session-Based RAG**: PDF text chunking, `all-MiniLM-L6-v2` embeddings, and per-session FAISS vector search
 - 🧠 **Two-Tier Cognitive Memory**: Short-term window summarization + parallel long-term SQLite user fact store
 - 📱 **Interactive Streamlit UI**: Multi-session sidebar management with automatic chat title generation (~0.3s)
+- 📁 **Dual Logging Storage**: Live console terminal logs + auto-incrementing timestamped log files (`logs/app_001_YYYY-MM-DD_HH-MM-SS.log`)
 - ⚡ **FastAPI REST API (`src/api/`)**: Production REST microservice endpoints with OpenAPI Swagger docs (`/docs`)
 - 🐳 **Docker Deployment**: Pre-built container published on Docker Hub (`niravrupapara/chatbot:latest`)
 
 ---
 
-## 💡 Why This Project?
+## 📍 Quick Navigation
 
-Most AI projects are basic API wrappers. This project demonstrates **how production AI systems are actually engineered** — combining state machine orchestration, parallel background memory extraction, session-isolated RAG, and containerized REST microservices into an enterprise-grade platform.
-
----
-
-## 🛠️ Key Challenges Solved
-
-- ⚡ **Parallel Memory**: Hidden extraction latency via LangGraph parallel node execution
-- 🔒 **Isolated RAG**: Per-session FAISS indices preventing document data leakage
-- 🏷️ **Automatic Chat Title Generation**: 0.3s single-pass session title generation on first turn
-- ⚙️ **Runtime Configuration**: Dynamic runtime parameter overrides without app restarts
-- 🐳 **Optimized Docker Builds**: 1-second builds via optimized layer ordering & CPU PyTorch
-
----
-
-## ⚡ Performance
-
-| Metric | Specification |
-| :--- | :--- |
-| **Title Generation** | **~0.3s** (Automatic chat title generation) |
-| **Embedding Model** | `all-MiniLM-L6-v2` (SentenceTransformers CPU) |
-| **Vector Search** | FAISS L2 / Cosine Similarity (In-Memory Cached) |
-| **Memory Sync** | Parallel node execution (Zero latency overhead) |
-| **Docker Rebuild** | **~1s** (Optimized Docker builds via layer caching) |
+- [User Interface Showcase](#-user-interface-showcase)
+- [System Architecture](#-system-architecture)
+- [Execution Workflow](#-execution-workflow)
+- [Repository Structure](#-repository-structure)
+- [Why This Project?](#-why-this-project)
+- [Key Challenges Solved](#-key-challenges-solved)
+- [Performance](#-performance)
+- [Core Features](#-core-features)
+- [Quickstart Guide](#-quickstart-guide)
+- [REST API Reference](#-rest-api-reference)
+- [Configuration & Logging](#-configuration--logging)
+- [License](#-license)
 
 ---
 
@@ -173,6 +142,8 @@ Final Response to User
 ├── 📂 data/                            # Persistent data storage (Git ignored)
 │   ├── 📄 chat_history.db              # SQLite DB (Chat history, checkpoints, SqliteStore long-term facts)
 │   └── 📂 vector_store/                # FAISS vector indices (.index and .pkl files per chat session)
+├── 📂 logs/                            # Dual logging storage (Git ignored)
+│   └── 📄 app_001_YYYY-MM-DD_HH-MM-SS.log # Serial-numbered timestamped log files
 ├── 📂 src/                             # Backend application source code
 │   ├── 📂 agents/tools/                # Autonomous agent tools
 │   │   ├── 📄 calculator.py            # Math evaluation tool via NumExpr
@@ -185,16 +156,17 @@ Final Response to User
 │   │   └── 📄 schemas.py               # Pydantic request & response data models
 │   ├── 📂 db/                          # Database persistence layer
 │   │   ├── 📄 connection.py            # SQLite connection manager & table migrations
+│   │   ├── 📄 schema.py                # Database table creation (sessions, long_term_memory)
 │   │   └── 📂 repositories/            # SQLite CRUD repositories for sessions & memories
 │   ├── 📂 graph/                       # LangGraph state machine orchestrator
 │   │   ├── 📄 builder.py               # StateGraph compilation with SqliteSaver & SqliteStore
-│   │   ├── 📄 state.py                 # ChatState definition (messages + summary state)
+│   │   ├── 📄 state.py                 # ChatState definition (messages + summary + last_summarized_count)
 │   │   └── 📂 nodes/                   # Parallel execution nodes
 │   │       ├── 📄 agent.py             # Reasoning agent node & iterative tool execution loop
 │   │       └── 📄 remember.py          # Parallel long-term memory user fact extractor
 │   ├── 📂 memory/                      # Two-tier cognitive memory subsystem
 │   │   ├── 📄 long_term.py             # SqliteStore fact extraction & profile persistence
-│   │   └── 📄 short_term.py            # Window-based conversation summarizer
+│   │   └── 📄 short_term.py            # Integer count batch summarization & sliding window
 │   ├── 📂 rag/                         # Document retrieval-augmented generation engine
 │   │   ├── 📄 embeddings.py            # SentenceTransformers (all-MiniLM-L6-v2) & FAISS cache
 │   │   └── 📄 ingestion.py             # PDF text parsing, chunking, & vector index creation
@@ -203,7 +175,7 @@ Final Response to User
 │   │   └── 📄 session_service.py       # Session CRUD & single-pass fast LLM title generator (~0.3s)
 │   └── 📂 utils/                       # Shared utility modules
 │       ├── 📄 config_loader.py         # Centralized YAML configuration parser
-│       ├── 📄 logger.py                # Centralized structured logger factory (get_logger)
+│       ├── 📄 logger.py                # Serial-numbered & timestamped dual logger factory (get_logger)
 │       ├── 📄 runtime_config.py        # Dynamic runtime configuration overrides
 │       └── 📄 llm_client.py            # Mistral AI SDK client initializer
 ├── 📂 ui/                              # Streamlit frontend web application
@@ -225,22 +197,52 @@ Final Response to User
 
 ---
 
+## 💡 Why This Project?
+
+Most AI projects are basic API wrappers. This project demonstrates **how production AI systems are actually engineered** — combining state machine orchestration, parallel background memory extraction, session-isolated RAG, and containerized REST microservices into an enterprise-grade platform.
+
+---
+
+## 🛠️ Key Challenges Solved
+
+- ⚡ **Parallel Memory**: Hidden extraction latency via LangGraph parallel node execution
+- 🔒 **Isolated RAG**: Per-session FAISS indices preventing document data leakage
+- 🏷️ **Automatic Chat Title Generation**: 0.3s single-pass session title generation on first turn
+- ⚙️ **Runtime Configuration**: Dynamic runtime parameter overrides without app restarts
+- 📁 **Dual Logging Storage**: Live console terminal logs + auto-incrementing timestamped log files (`logs/app_001_YYYY-MM-DD_HH-MM-SS.log`)
+- 🐳 **Optimized Docker Builds**: 1-second builds via optimized layer ordering & CPU PyTorch
+
+---
+
+## ⚡ Performance
+
+| Metric | Specification |
+| :--- | :--- |
+| **Title Generation** | **~0.3s** (Automatic chat title generation) |
+| **Embedding Model** | `all-MiniLM-L6-v2` (SentenceTransformers CPU) |
+| **Vector Search** | FAISS L2 / Cosine Similarity (In-Memory Cached) |
+| **Memory Sync** | Parallel node execution (Zero latency overhead) |
+| **Docker Rebuild** | **~1s** (Optimized Docker builds via layer caching) |
+
+---
+
 ## ✨ Core Features
 
 | Feature | Description |
 | :--- | :--- |
-| **LangGraph Core** | Parallel reasoning & memory state machine |
-| **Session RAG** | PDF chunking + per-session FAISS vector search |
-| **Two-Tier Memory** | Short-term summary + long-term SQLite user facts |
+| **LangGraph Core** | Parallel reasoning & memory state machine (`agent_node` + `remember_node`) |
+| **Session RAG** | PDF chunking + per-session FAISS vector search (`all-MiniLM-L6-v2`) |
+| **Two-Tier Memory** | Short-term batch summary + long-term SQLite user facts (`SqliteStore`) |
 | **Autonomous Tools** | Web search, Math, Stock quotes, Document search |
 | **Automatic Titling** | 0.3s single-pass session title generator |
+| **Dual Logging** | Live terminal console + serial-numbered timestamped log files (`logs/app_001_...log`) |
 | **Streamlit Web UI** | Multi-session sidebar & live runtime config sliders |
-| **FastAPI REST API** | Production microservice endpoints with Swagger docs |
-| **Docker Deployment** | One-command run from Docker Hub |
+| **FastAPI REST API** | Production microservice endpoints (`/health` & `/api/v1/chat`) with Swagger docs (`/docs`) |
+| **Docker Deployment** | One-command run from Docker Hub (`niravrupapara/chatbot:latest`) |
 
 ---
 
-## 🚀 Quickstart & Execution Guide
+## 🚀 Quickstart Guide
 
 Choose one of the **two methods** below to run the application:
 
@@ -298,7 +300,7 @@ docker run -p 8501:8501 -e MISTRAL_API_KEY="your_actual_mistral_api_key_here" ni
 
 ---
 
-## 📡 REST API & Microservice Package (`src/api/`)
+## 📡 REST API Reference
 
 The repository includes a production REST API built with **FastAPI** and **Pydantic** for web service integrations.
 
@@ -312,7 +314,7 @@ The repository includes a production REST API built with **FastAPI** and **Pydan
 
 ---
 
-## ⚙️ Configuration & Control Knobs
+## ⚙️ Configuration & Logging
 
 All runtime parameters are centralized in `configs/config.yaml`:
 
@@ -322,9 +324,13 @@ model:
   temperature: 0.7
   max_tokens: 1024
 
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+
 memory:
-  summary_threshold: 20    # Summarize conversation after N messages
-  window_size: 6           # Retain last N messages verbatim
+  summary_threshold: 10    # Summarize after 10 unsummarized messages
+  window_size: 6           # Retain last 6 messages verbatim
 
 rag:
   chunk_size: 500          # PDF token chunk size
@@ -333,19 +339,7 @@ rag:
   top_k: 3                 # Number of context chunks retrieved
 ```
 
-*Note: Parameters can also be overridden dynamically at runtime from the **Settings** page in the Streamlit UI without restarting the application.*
-
----
-
-## 🧪 Testing & CI/CD Pipeline
-
-The codebase maintains strict MLOps hygiene with automated quality checks:
-
-- **Static Code Linting**: Fast syntax and code analysis enforced via **Ruff**:
-  ```bash
-  ruff check .
-  ```
-- **Automated GitHub Actions CI**: Every push to `main` triggers `.github/workflows/ci.yml`, running Ruff analysis and an import smoke test to verify graph compilation.
+*Note: Logs are printed live to the terminal console and automatically saved to `logs/app_001_YYYY-MM-DD_HH-MM-SS.log` with UTF-8 encoding.*
 
 ---
 
